@@ -27,7 +27,7 @@ then
     )"
 
     # Delete wget log file
-#    rm "$log"
+    rm "$log"
 else
     echo "Unable to calculate estimated size."
     exit 1
