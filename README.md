@@ -1,3 +1,11 @@
 # Website pages size scanner
 
-Script expects file with the list of URLs to scan and using 'wget' command counts the size of all images on pages.
+Script takes file with list of links and estimates size of each page writing to outpt file in CSV format.
+
+What do we count:
+* size of the html of the page
+* all CSS, JS files mentioned in html
+* all images embedded as <img> tags
+
+TODO:
+* count images embedded as background
