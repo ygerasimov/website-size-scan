@@ -11,21 +11,15 @@ import (
 	"strings"
 )
 
-func checkError( e error){
-	if e != nil {
-		fmt.Printf("%s", e)
-		panic(e)
-	}
-}
-
 func main() {
-	input := make(chan string) // no buffer
-	output := make(chan string)
-	count := 23 
-	workers := 3
-	baseUrl := "http://www.audubon.org";
+	count := 1  // Number of URLs in the input file.
+	workers := 1  // Be careful with this number. Bit number will put your site down.
+	baseUrl := "http://www.audubon.org"; // Will be used to adjust relative paths.
 	inputFile := "links.txt"
 	outputFile := "/home/ygerasimov/go/output.csv"
+
+	input := make(chan string) // no buffer
+	output := make(chan string)
 
 	// Read the file and feed links to input channel.
 	go func(count int, in chan string) {
@@ -49,27 +43,52 @@ func main() {
 			for {
 				url := <-in
 				fmt.Println("Worker", k, "start scan:", url)
-				
-				doc, err := goquery.NewDocument(url) 
+
+				doc, err := goquery.NewDocument(url)
 				if err != nil {
 					log.Fatal(err)
 				}
-				
+
 				totalSize := getUrlSize(url, baseUrl)
-				
+
 				// Extract images and check their size.
 				// fmt.Printf("Document %s\n", url)
 				doc.Find("body img").Each(func(i int, s *goquery.Selection) {
 					src, ok := s.Attr("src")
+					// fmt.Printf("Image %s\n", src)
 					if ok {
 						totalSize = totalSize + getUrlSize(src, baseUrl)
 					}
 				})
-				
+
+				// Extract css size.
+				doc.Find("link").Each(func(i int, s *goquery.Selection) {
+					rel, _ := s.Attr("rel")
+					if rel == "stylesheet" {
+						href, ok := s.Attr("href")
+						// fmt.Printf("CSS %s\n", href)
+						if ok {
+							totalSize = totalSize + getUrlSize(href, baseUrl)
+						}
+					}
+				})
+
+				// Extract javascript size.
+				doc.Find("script").Each(func(i int, s *goquery.Selection) {
+					scriptType, _ := s.Attr("type")
+					if scriptType == "text/javascript" {
+						src, ok := s.Attr("src")
+						// fmt.Printf("JS %s\n", src)
+						if ok {
+							totalSize = totalSize + getUrlSize(src, baseUrl)
+						}
+					}
+				})
+
 				var totalSizeFloat float64;
 				totalSizeFloat = float64(totalSize) / (1024 * 1024)
-												
-				out <- fmt.Sprintf("%s, %s", url, strconv.FormatFloat(totalSizeFloat, 'f', 2, 64))			
+
+				out <- fmt.Sprintf("%s, %s", url, strconv.FormatFloat(totalSizeFloat, 'f', 2, 64))
 			}
 		}(j, input, output)
 	}
@@ -77,7 +96,7 @@ func main() {
 	f, err := os.Create(outputFile)
 	checkError(err)
 	defer f.Close()
-		
+
 	for i := 1; i <= count; i++ {
 		result := <-output
 		n, err := f.WriteString(result)
@@ -86,16 +105,19 @@ func main() {
 		}
 		fmt.Println(i, result)
 	}
-	
+
 	f.Sync()
 }
 
 func getUrlSize(url, baseUrl string) (int64) {
+	if url == "" {
+		return 0;
+	}
 	// If url is relative.
 	if !strings.Contains(url, "://") {
 		url = baseUrl + url
 	}
-	
+
 	response, err := http.Head(url)
 	if err != nil {
 			log.Println("Error while downloading", url, ":", err)
@@ -109,6 +131,13 @@ func getUrlSize(url, baseUrl string) (int64) {
 
 	length, _ := strconv.Atoi(response.Header.Get("Content-Length"))
 	sourceSize := int64(length)
-	
+
 	return sourceSize
+}
+
+func checkError( e error){
+	if e != nil {
+		fmt.Printf("%s", e)
+		panic(e)
+	}
 }
