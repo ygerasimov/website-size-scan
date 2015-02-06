@@ -26,7 +26,7 @@ Now do prepare workspace
 export GOPATH=/var/www/website-size-scan/
 ```
 
-Download neede dependency
+Download needed dependency
 ```sh
 cd /var/www/website-size-scan/
 go get github.com/PuerkitoBio/goquery
