@@ -38,3 +38,9 @@ For current project run a command
 go build scan-website.go
 ```
 and you'll get executable program nearby, named ```scan-website```
+
+Video how-to
+=====
+
+Use this link to watch how-to compile go programs
+https://www.youtube.com/watch?v=XCsL89YtqCs
