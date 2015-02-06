@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"bufio"
 	"os"
-	"os/exec"
-	//"io/ioutil"
+	"github.com/PuerkitoBio/goquery"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 func checkError( e error){
@@ -18,13 +21,15 @@ func checkError( e error){
 func main() {
 	input := make(chan string) // no buffer
 	output := make(chan string)
-	count := 5000 
-	workers := 20
-	path := "/home/ygerasimov/go/";
+	count := 23 
+	workers := 3
+	baseUrl := "http://www.audubon.org";
+	inputFile := "links.txt"
+	outputFile := "/home/ygerasimov/go/output.csv"
 
 	// Read the file and feed links to input channel.
 	go func(count int, in chan string) {
-		file, err := os.Open("links.txt")
+		file, err := os.Open(inputFile)
 		checkError(err)
 		defer file.Close()
 
@@ -45,16 +50,31 @@ func main() {
 				url := <-in
 				fmt.Println("Worker", k, "start scan:", url)
 				
-				cmd := path + "website-size.sh -l 1 " + url;
-				cmd_out, err := exec.Command("/bin/sh", "-c", cmd).Output()
-				checkError(err)
+				doc, err := goquery.NewDocument(url) 
+				if err != nil {
+					log.Fatal(err)
+				}
 				
-				out <- fmt.Sprintf("%s", cmd_out)			
+				totalSize := getUrlSize(url, baseUrl)
+				
+				// Extract images and check their size.
+				// fmt.Printf("Document %s\n", url)
+				doc.Find("body img").Each(func(i int, s *goquery.Selection) {
+					src, ok := s.Attr("src")
+					if ok {
+						totalSize = totalSize + getUrlSize(src, baseUrl)
+					}
+				})
+				
+				var totalSizeFloat float64;
+				totalSizeFloat = float64(totalSize) / (1024 * 1024)
+												
+				out <- fmt.Sprintf("%s, %s", url, strconv.FormatFloat(totalSizeFloat, 'f', 2, 64))			
 			}
 		}(j, input, output)
 	}
 
-	f, err := os.Create(path + "/output.txt")
+	f, err := os.Create(outputFile)
 	checkError(err)
 	defer f.Close()
 		
@@ -68,4 +88,27 @@ func main() {
 	}
 	
 	f.Sync()
+}
+
+func getUrlSize(url, baseUrl string) (int64) {
+	// If url is relative.
+	if !strings.Contains(url, "://") {
+		url = baseUrl + url
+	}
+	
+	response, err := http.Head(url)
+	if err != nil {
+			log.Println("Error while downloading", url, ":", err)
+			return 0
+	}
+	// Verify if the response was ok
+	if response.StatusCode != http.StatusOK {
+			log.Println("Server return non-200 status: %v\n", response.Status)
+			return 0
+	}
+
+	length, _ := strconv.Atoi(response.Header.Get("Content-Length"))
+	sourceSize := int64(length)
+	
+	return sourceSize
 }
