@@ -1,15 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"bufio"
-	"os"
+	"flag"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
-	"flag"
 )
 
 var count int
@@ -97,7 +97,7 @@ func main() {
 					}
 				})
 
-				var totalSizeFloat float64;
+				var totalSizeFloat float64
 				totalSizeFloat = float64(totalSize) / (1024 * 1024)
 
 				out <- fmt.Sprintf("%s, %s", url, strconv.FormatFloat(totalSizeFloat, 'f', 2, 64))
@@ -121,9 +121,9 @@ func main() {
 	f.Sync()
 }
 
-func getUrlSize(url, baseUrl string) (int64) {
+func getUrlSize(url, baseUrl string) int64 {
 	if url == "" {
-		return 0;
+		return 0
 	}
 
 	// If url starts with // (like google font)
@@ -138,13 +138,13 @@ func getUrlSize(url, baseUrl string) (int64) {
 
 	response, err := http.Head(url)
 	if err != nil {
-			log.Println("Error while downloading", url, ":", err)
-			return 0
+		log.Println("Error while downloading", url, ":", err)
+		return 0
 	}
 	// Verify if the response was ok
 	if response.StatusCode != http.StatusOK {
-			log.Println("Server return non-200 status: ", url, response.Status)
-			return 0
+		log.Println("Server return non-200 status: ", url, response.Status)
+		return 0
 	}
 
 	length, _ := strconv.Atoi(response.Header.Get("Content-Length"))
@@ -153,7 +153,7 @@ func getUrlSize(url, baseUrl string) (int64) {
 	return sourceSize
 }
 
-func checkError( e error){
+func checkError(e error) {
 	if e != nil {
 		fmt.Printf("%s", e)
 		panic(e)
