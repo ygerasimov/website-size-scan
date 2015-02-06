@@ -9,14 +9,26 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"flag"
 )
 
+var count int
+var workers int
+var baseUrl string
+var inputFile string
+var outputFile string
+
+func init() {
+	flag.IntVar(&count, "count", 100, "Number of URLs in the input file")
+	flag.IntVar(&workers, "workers", 5, "Number of workers. Be careful with this number. Big number will put your site down.")
+	flag.StringVar(&baseUrl, "baseUrl", "http://www.example.com", "Will be used to adjust relative paths.")
+	flag.StringVar(&inputFile, "inputFile", "./links.csv", "Will be used as source file for links.")
+	flag.StringVar(&outputFile, "outputFile", "./output.csv", "Will be used as output for results.")
+
+	flag.Parse()
+}
+
 func main() {
-	count := 100  // Number of URLs in the input file.
-	workers := 5  // Be careful with this number. Big number will put your site down.
-	baseUrl := "http://www.example.com"; // Will be used to adjust relative paths.
-	inputFile := "/home/ygerasimov/go/links.csv"
-	outputFile := "/home/ygerasimov/go/output.csv"
 
 	input := make(chan string)
 	output := make(chan string)

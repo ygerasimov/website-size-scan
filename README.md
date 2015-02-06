@@ -35,11 +35,24 @@ go get github.com/PuerkitoBio/goquery
 Now you are ready for compiling go code within workspace directory.
 For current project run a command
 ```sh
-go build scan-website.go
+go build
 ```
-and you'll get executable program nearby, named ```scan-website```
+and you'll get executable program nearby, named ```website-size-scan```
 
-Video how-to
+Command line options for compiled program
+=====
+
+```sh
+# ./website-size-scan -h
+Usage of ./website-size-scan:
+  -baseUrl="http://www.example.com": Will be used to adjust relative paths.
+  -count=100: Number of URLs in the input file
+  -inputFile="./links.csv": Will be used as source file for links.
+  -outputFile="./output.csv": Will be used as output for results.
+  -workers=5: Number of workers. Be careful with this number. Big number will put your site down.
+```
+
+Video how-to "going"
 =====
 
 Use this link to watch how-to compile go programs
