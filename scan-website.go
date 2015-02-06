@@ -12,13 +12,13 @@ import (
 )
 
 func main() {
-	count := 1  // Number of URLs in the input file.
-	workers := 1  // Be careful with this number. Bit number will put your site down.
-	baseUrl := "http://www.audubon.org"; // Will be used to adjust relative paths.
-	inputFile := "links.txt"
+	count := 100  // Number of URLs in the input file.
+	workers := 5  // Be careful with this number. Big number will put your site down.
+	baseUrl := "http://www.example.com"; // Will be used to adjust relative paths.
+	inputFile := "/home/ygerasimov/go/links.csv"
 	outputFile := "/home/ygerasimov/go/output.csv"
 
-	input := make(chan string) // no buffer
+	input := make(chan string)
 	output := make(chan string)
 
 	// Read the file and feed links to input channel.
@@ -99,7 +99,7 @@ func main() {
 
 	for i := 1; i <= count; i++ {
 		result := <-output
-		n, err := f.WriteString(result)
+		n, err := f.WriteString(result + "\n")
 		if err != nil {
 			fmt.Println(n, err)
 		}
@@ -113,6 +113,12 @@ func getUrlSize(url, baseUrl string) (int64) {
 	if url == "" {
 		return 0;
 	}
+
+	// If url starts with // (like google font)
+	if url[0:2] == "//" {
+		url = "http:" + url
+	}
+
 	// If url is relative.
 	if !strings.Contains(url, "://") {
 		url = baseUrl + url
@@ -125,7 +131,7 @@ func getUrlSize(url, baseUrl string) (int64) {
 	}
 	// Verify if the response was ok
 	if response.StatusCode != http.StatusOK {
-			log.Println("Server return non-200 status: %v\n", response.Status)
+			log.Println("Server return non-200 status: ", url, response.Status)
 			return 0
 	}
 
